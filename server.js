@@ -25,10 +25,25 @@ app.get('/bets/get-bets/:id', async(req, res) => {
   res.status(200).json(poolData)
 });
 
+
+app.get('/pools/get-top-pools', async(req, res) => {
+  let coll = await db.collection("pools")
+  const poolData = await coll.find()
+  res.status(200).json(poolData)
+});
+
+app.get('/pools/get-pool/:id', async(req, res) => {
+  const _id = req.params.id
+  let coll = await db.collection("pools")
+  const poolData = await coll.findOne({ poolId: parseInt(_id) })
+  res.status(200).json(poolData)
+});
+
 app.post('/bets/place-bet', async(req, res) => {
   const body = req.body
   let coll = await db.collection("bets")
   const {poolId, direction, stakeAmount, result, playerAddress} = body
+  // trigger smart contract
   const poolData = await coll.insertOne({poolId, direction, stakeAmount, result, playerAddress})
   res.status(201).json(poolData)
 });
