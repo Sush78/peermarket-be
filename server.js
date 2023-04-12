@@ -29,7 +29,11 @@ app.get('/bets/get-bets/:id', async(req, res) => {
 app.get('/pools/get-top-pools', async(req, res) => {
   let coll = await db.collection("pools")
   const poolData = await coll.find()
-  res.status(200).json(poolData)
+  let poolRes = []
+  await poolData.forEach(element => {
+    poolRes.push(element)
+  });
+  res.status(200).json(poolRes)
 });
 
 app.get('/pools/get-pool/:id', async(req, res) => {
