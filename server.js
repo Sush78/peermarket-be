@@ -66,28 +66,15 @@ app.listen(PORT, async (req,res) => {
 
 
 // Socket Config for live data feed
+const io = socketio(app);
 
-// const io = new Server(httpServer, {
-//   cors: {
-//     origin: '*'
-//   }
-// })
-
-// io.on('connection', (socket) => {
-
-//   setInterval(() => {
-//     const betValue = Math.random() < 0.5
-//     if (!obj[betValue]) obj[betValue] = 1; else obj[betValue] = obj[betValue] + 1;
-
-//     console.log(obj)
-//     socket.emit('welcome', obj)
-
-//   }, 2000);
-
-//   // socket.emit('welcome', 'welcome to PeerMarket')
-
-
-//   socket.on('msg', (data) => {
-//     console.log('msg from client =>', data)
-//   })
-// })
+io.on('connection', (socket) => {
+  console.log('New WebSocket connection');
+  
+  // Listen for new posts from any connected client
+  socket.on('newBet', (betDetails) => {
+    console.log("newBet: ", betDetails)
+    // Broadcast the new post to all connected clients
+    io.emit('newBet', betDetails);
+  });
+});
