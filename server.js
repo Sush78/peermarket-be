@@ -78,8 +78,11 @@ io.on('connection', (socket) => {
   console.log('New WebSocket connection');
   
   // Listen for new posts from any connected client
-  socket.on('newBet', (betDetails) => {
+  socket.on('newBet', async(betDetails) => {
     console.log("newBet: ", betDetails)
+    const {poolId, choice, amount, currentAccount} = body
+    // trigger smart contract
+    await coll.insertOne({poolId: poolId, direction: choice, stakeAmount: amount, result: "NA",  playerAddress: currentAccount})
     // Broadcast the new post to all connected clients
     io.emit('newBet', betDetails);
   });
