@@ -80,7 +80,7 @@ io.on('connection', (socket) => {
   // Listen for new posts from any connected client
   socket.on('newBet', async(betDetails) => {
     console.log("newBet: ", betDetails)
-    const {poolId, choice, amount, currentAccount} = body
+    const {poolId, choice, amount, currentAccount} = betDetails
     // trigger smart contract
     await coll.insertOne({poolId: poolId, direction: choice, stakeAmount: amount, result: "NA",  playerAddress: currentAccount})
     // Broadcast the new post to all connected clients
