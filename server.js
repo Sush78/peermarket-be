@@ -82,6 +82,7 @@ io.on('connection', (socket) => {
     console.log("newBet: ", betDetails)
     const {poolId, choice, amount, currentAccount} = betDetails
     // trigger smart contract
+    let coll = await db.collection("bets")
     await coll.insertOne({poolId: poolId, direction: choice, stakeAmount: amount, result: "NA",  playerAddress: currentAccount})
     // Broadcast the new post to all connected clients
     io.emit('newBet', betDetails);
