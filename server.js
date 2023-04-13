@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import * as dotenv from 'dotenv'
 import express from 'express';
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 
 dotenv.config()
 const obj = { true: 1, false: 1 }
@@ -39,7 +39,7 @@ app.get('/pools/get-top-pools', async(req, res) => {
 app.get('/pools/get-pool/:id', async(req, res) => {
   const _id = req.params.id
   let coll = await db.collection("pools")
-  const poolData = await coll.findOne({ poolId: parseInt(_id) })
+  const poolData = await coll.findOne({ "_id": new ObjectId(_id) })
   res.status(200).json(poolData)
 });
 
