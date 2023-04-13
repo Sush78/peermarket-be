@@ -46,7 +46,8 @@ app.get('/pools/get-pool/:id', async(req, res) => {
   const secondPct = (poolData.stats["1"] / (poolData.stats["0"] + poolData.stats["1"])) * 100
   const labels = [poolData.resultMap["0"], poolData.resultMap["1"]]
   const data = [firstPct.toFixed(2), secondPct.toFixed(2)]
-  res.status(200).json({poolData, labels, data})
+  const totalVolume = poolData.stats["0"] + poolData.stats["1"]
+  res.status(200).json({poolData, labels, data, totalVolume})
 });
 
 app.post('/bets/place-bet', async(req, res) => {
@@ -100,7 +101,8 @@ io.on('connection', (socket) => {
     const secondPct = (poolData.stats["1"] / (poolData.stats["0"] + poolData.stats["1"])) * 100
     const labels = [poolData.resultMap["0"], poolData.resultMap["1"]]
     const data = [firstPct.toFixed(2), secondPct.toFixed(2)]
+    const totalVolume = poolData.stats["0"] + poolData.stats["1"]
     // Broadcast the new post to all connected clients
-    io.emit('newBet', {labels, data});
+    io.emit('newBet', {labels, data, totalVolume});
   });
 });
