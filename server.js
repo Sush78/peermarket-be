@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+import { createServer } from 'http'
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import * as dotenv from 'dotenv'
@@ -6,7 +7,6 @@ import express from 'express';
 import { MongoClient, ObjectId } from 'mongodb'
 
 dotenv.config()
-const obj = { true: 1, false: 1 }
 
 const app = express()
 
@@ -17,6 +17,8 @@ let db = null
 app.use(bodyParser.json({limit: "30mb", extended: true}))
 app.use(bodyParser.urlencoded({limit: "30mb", extended: true}))
 app.use(cors())
+
+const server = createServer(app);
 
 app.get('/bets/get-bets/:id', async(req, res) => {
   const _id = req.params.id
@@ -52,7 +54,7 @@ app.post('/bets/place-bet', async(req, res) => {
   res.status(201).json(poolData)
 });
 
-app.listen(PORT, async (req,res) => {
+server.listen(PORT, async (req,res) => {
   const client = new MongoClient(CONNECTION_URL);
   try {
       // Connect to the MongoDB cluster
@@ -66,7 +68,11 @@ app.listen(PORT, async (req,res) => {
 
 
 // Socket Config for live data feed
-const io = socketio(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*'
+  }
+})
 
 io.on('connection', (socket) => {
   console.log('New WebSocket connection');
