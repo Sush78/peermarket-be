@@ -42,7 +42,11 @@ app.get('/pools/get-pool/:id', async(req, res) => {
   const _id = req.params.id
   let coll = await db.collection("pools")
   const poolData = await coll.findOne({ "_id": new ObjectId(_id) })
-  res.status(200).json(poolData)
+  const firstPct = (poolData.stats["0"] / (poolData.stats["0"] + poolData.stats["1"])) * 100
+  const secondPct = (poolData.stats["1"] / (poolData.stats["0"] + poolData.stats["1"])) * 100
+  const labels = [poolData.resultMap["0"], poolData.resultMap["1"]]
+  const data = [firstPct.toFixed(2), secondPct.toFixed(2)]
+  res.status(200).json({poolData, labels, data})
 });
 
 app.post('/bets/place-bet', async(req, res) => {
@@ -81,10 +85,22 @@ io.on('connection', (socket) => {
   socket.on('newBet', async(betDetails) => {
     console.log("newBet: ", betDetails)
     const {poolId, choice, amount, currentAccount} = betDetails
-    // trigger smart contract
+    // update bets collection
     let coll = await db.collection("bets")
-    await coll.insertOne({poolId: poolId, direction: choice, stakeAmount: amount, result: "NA",  playerAddress: currentAccount})
+    await coll.insertOne({poolId: new ObjectId(poolId), direction: choice, stakeAmount: amount, result: "NA",  playerAddress: currentAccount})
+    let coll2 = await db.collection("pools")
+    // update pool stats
+    const collName = `stats.${choice}`
+    coll2.updateOne(
+        { "_id": new ObjectId(poolId) },
+        { $inc: { collName : 1 } }
+      )
+    const poolData = coll2.findOne({"_id": new ObjectId(poolId)})
+    const firstPct = (poolData.stats["0"] / (poolData.stats["0"] + poolData.stats["1"])) * 100
+    const secondPct = (poolData.stats["1"] / (poolData.stats["0"] + poolData.stats["1"])) * 100
+    const labels = [poolData.resultMap["0"], poolData.resultMap["1"]]
+    const data = [firstPct.toFixed(2), secondPct.toFixed(2)]
     // Broadcast the new post to all connected clients
-    io.emit('newBet', betDetails);
+    io.emit('newBet', {labels, data});
   });
 });
