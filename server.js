@@ -84,7 +84,6 @@ io.on('connection', (socket) => {
   
   // Listen for new posts from any connected client
   socket.on('newBet', async(betDetails) => {
-    console.log("newBet: ", betDetails)
     const {poolId, choice, amount, currentAccount} = betDetails
     // update bets collection
     let coll = await db.collection("bets")
@@ -92,10 +91,17 @@ io.on('connection', (socket) => {
     let coll2 = await db.collection("pools")
     // update pool stats
     const collName = `stats.${choice}`
-    await coll2.updateOne(
-        { "_id": new ObjectId(poolId) },
-        { $inc: { collName : 1 } }
+    if(choice === "1"){
+      await coll2.updateOne(
+          { "_id": new ObjectId(poolId) },
+          { $inc: { "stats.1" : amount } }
       )
+    } else {
+      await coll2.updateOne(
+          { "_id": new ObjectId(poolId) },
+          { $inc: { "stats.0" : amount } }
+      )
+    }
     const poolData = await coll2.findOne({"_id": new ObjectId(poolId)})
     const firstPct = (poolData.stats["0"] / (poolData.stats["0"] + poolData.stats["1"])) * 100
     const secondPct = (poolData.stats["1"] / (poolData.stats["0"] + poolData.stats["1"])) * 100
