@@ -92,11 +92,11 @@ io.on('connection', (socket) => {
     let coll2 = await db.collection("pools")
     // update pool stats
     const collName = `stats.${choice}`
-    coll2.updateOne(
+    await coll2.updateOne(
         { "_id": new ObjectId(poolId) },
         { $inc: { collName : 1 } }
       )
-    const poolData = coll2.findOne({"_id": new ObjectId(poolId)})
+    const poolData = await coll2.findOne({"_id": new ObjectId(poolId)})
     const firstPct = (poolData.stats["0"] / (poolData.stats["0"] + poolData.stats["1"])) * 100
     const secondPct = (poolData.stats["1"] / (poolData.stats["0"] + poolData.stats["1"])) * 100
     const labels = [poolData.resultMap["0"], poolData.resultMap["1"]]
