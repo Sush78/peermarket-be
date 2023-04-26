@@ -5,6 +5,7 @@ import cors from 'cors';
 import * as dotenv from 'dotenv'
 import express from 'express';
 import { MongoClient, ObjectId } from 'mongodb'
+import * as fs from "fs";
 
 dotenv.config()
 
@@ -29,6 +30,9 @@ app.get('/api/bets/get-bets/:id', async(req, res) => {
 
 
 app.get('/api/pools/get-top-pools', async(req, res) => {
+  if(!db){
+    console.error("Data base is not connected")
+  }
   let coll = await db.collection("pools")
   const poolData = await coll.find()
   let poolRes = []
@@ -94,6 +98,8 @@ server.listen(PORT, async (req,res) => {
       // Connect to the MongoDB cluster
       const conn = await client.connect();
       db = conn.db("peermarket")
+
+      console.log("Database Connected")
   } catch (e) {
       console.error(e);
   }
@@ -155,7 +161,9 @@ io.on('connection', (socket) => {
     const timestamps_2 = [];
     const amounts_2 = [];
     for (const data of timeSeriesData) {
-      if (data.metaDeta.direction === betNames[0]) {+
+      betNames[0] = "0"
+      betNames[1] = "1"
+      if (data.metaDeta.direction == betNames[0]) {+
         timestamps_1.push(data.timestamp);
         amounts_1.push(data.amount);
       } else {
