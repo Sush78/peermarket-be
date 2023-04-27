@@ -5,12 +5,12 @@ import cors from 'cors';
 import * as dotenv from 'dotenv'
 import express from 'express';
 import { MongoClient, ObjectId } from 'mongodb'
-import * as fs from "fs";
+import https from 'https';
+import fs from 'fs';
 
 dotenv.config()
 
 const app = express()
-
 const CONNECTION_URL = `mongodb+srv://appUser:peermarket@cluster0.wtfw7u3.mongodb.net/?retryWrites=true&w=majority`
 const PORT = process.env.PORT || 9000
 let db = null
@@ -112,6 +112,33 @@ const io = new Server(server, {
     origin: '*'
   }
 })
+
+
+app.get('/api/bet/get-bet-image', async(req, res) => {
+
+  const text = 'Weather bet'; // Text input
+  const access_key = 'GOJsuiXyp5pabu2DI_3GDE5KlkgjFh0HKGwrlQ89xYU'; // Replace with your Unsplash access key
+  
+  https.get(`https://api.unsplash.com/photos/random?query=${text}&client_id=${access_key}`, (res) => {
+    let data = '';
+    res.on('data', (chunk) => {
+      data += chunk;
+    });
+    res.on('end', () => {
+      const image_url = JSON.parse(data).urls.regular;
+      https.get(image_url, (res) => {
+        const file = fs.createWriteStream('image.png');
+        res.pipe(file);
+        file.on('finish', () => {
+          file.close();
+          console.log('Image saved to file');
+        });
+      });
+    });
+  });
+  res.status(200)
+});
+
 
 io.on('connection', (socket) => {
   console.log('New WebSocket connection');
