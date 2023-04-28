@@ -59,22 +59,24 @@ app.get('/api/pools/get-pool/:id', async(req, res) => {
   const labels = [poolData.resultMap["0"], poolData.resultMap["1"]]
   const data = [firstPct.toFixed(2), secondPct.toFixed(2)]
   const totalVolume = poolData.stats["0"] + poolData.stats["1"]
-  const timestamps_1 = [];
-  const amounts_1 = [];
-  const timestamps_2 = [];
-  const amounts_2 = [];
-    for (const data of timeSeriesData) {
-      if (data.metaDeta.direction === "0") {
-        timestamps_1.push(data.timestamp);
-        amounts_1.push(data.amount);
-      } else {
-        timestamps_2.push(data.timestamp);
-        amounts_2.push(data.amount);
-      }
+  const graphData = [];
+  for (const data of timeSeriesData) {
+    const key = `${data.timestamp}-${data.metaDeta.direction}`;
+    const value = data.amount;
+    const existingData = graphData.find(d => Object.keys(d)[0] === key);
+    if (existingData) {
+      existingData[key].push(value);
+    } else {
+      graphData.push({ [key]: [value] });
     }
-    const timestamps = [timestamps_1, timestamps_2]
-    const amounts = [amounts_1, amounts_2]
-  res.status(200).json({poolData, labels, data, totalVolume, timestamps, amounts})
+  }
+  graphData.sort((a, b) => {
+    const timestampA = new Date(Object.keys(a)[0].split("-")[0]).getTime();
+    const timestampB = new Date(Object.keys(b)[0].split("-")[0]).getTime();
+    return timestampA - timestampB;
+  });
+  console.log({labels, data, totalVolume, graphData})
+  res.status(200).json({poolData, labels, data, totalVolume, graphData})
 });
 
 app.post('/api/bets/place-bet', async(req, res) => {
@@ -170,7 +172,6 @@ io.on('connection', (socket) => {
       )
     }
     const poolData = await coll2.findOne({"_id": new ObjectId(poolId)})
-    let betNames = [poolData.resultMap["0"],poolData.resultMap["1"]]
     const query = { 'metaDeta.poolId': poolId, "metaDeta.direction": { "$in": ["0", "1"] } };
     const options = {
       sort: { timestamp: 1 }, // Sort by timestamp in ascending order
@@ -183,25 +184,23 @@ io.on('connection', (socket) => {
     const labels = [poolData.resultMap["0"], poolData.resultMap["1"]]
     const data = [firstPct.toFixed(2), secondPct.toFixed(2)]
     const totalVolume = poolData.stats["0"] + poolData.stats["1"]
-    const timestamps_1 = [];
-    const amounts_1 = [];
-    const timestamps_2 = [];
-    const amounts_2 = [];
+    const graphData = [];
     for (const data of timeSeriesData) {
-      betNames[0] = "0"
-      betNames[1] = "1"
-      if (data.metaDeta.direction == betNames[0]) {+
-        timestamps_1.push(data.timestamp);
-        amounts_1.push(data.amount);
+      const key = `${data.timestamp}-${data.metaDeta.direction}`;
+      const value = data.amount;
+      const existingData = graphData.find(d => Object.keys(d)[0] === key);
+      if (existingData) {
+        existingData[key].push(value);
       } else {
-        timestamps_2.push(data.timestamp);
-        amounts_2.push(data.amount);
+        graphData.push({ [key]: [value] });
       }
     }
-    const timestamps = [timestamps_1, timestamps_2]
-    const amounts = [amounts_1, amounts_2]
-    // Broadcast the new post to all connected clients
-    console.log({labels, data, totalVolume, timestamps, amounts})
-    io.emit('newBet', {labels, data, totalVolume, timestamps, amounts});
+    graphData.sort((a, b) => {
+      const timestampA = new Date(Object.keys(a)[0].split("-")[0]).getTime();
+      const timestampB = new Date(Object.keys(b)[0].split("-")[0]).getTime();
+      return timestampA - timestampB;
+    });
+    console.log({labels, data, totalVolume, graphData})
+    io.emit('newBet', {labels, data, totalVolume, poolId, graphData});
   });
 });
