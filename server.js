@@ -5,7 +5,6 @@ import cors from 'cors';
 import * as dotenv from 'dotenv'
 import express from 'express';
 import { MongoClient, ObjectId } from 'mongodb'
-import * as fs from "fs";
 
 dotenv.config()
 
@@ -70,11 +69,6 @@ app.get('/api/pools/get-pool/:id', async (req, res) => {
       graphData.push({ [key]: [value] });
     }
   }
-  graphData.sort((a, b) => {
-    const timestampA = new Date(Object.keys(a)[0].split("-")[0]).getTime();
-    const timestampB = new Date(Object.keys(b)[0].split("-")[0]).getTime();
-    return timestampA - timestampB;
-  });
   console.log({ labels, data, totalVolume, graphData })
   res.status(200).json({ poolData, labels, data, totalVolume, graphData })
 });
@@ -145,13 +139,11 @@ io.on('connection', (socket) => {
       )
     }
     const poolData = await coll2.findOne({ "_id": new ObjectId(poolId) })
-    let betNames = [poolData.resultMap["0"], poolData.resultMap["1"]]
     const query = { 'metaDeta.poolId': poolId, "metaDeta.direction": { "$in": ["0", "1"] } };
     const options = {
       sort: { timestamp: 1 }, // Sort by timestamp in ascending order
       projection: { timestamp: 1, amount: 1, 'metaDeta.direction': 1 } // Only fetch timestamp and amount fields
     };
-    const metaDeta = query.metaDeta;
     const timeSeriesData = await col3.find(query, options).toArray();
     const firstPct = (poolData.stats["0"] / (poolData.stats["0"] + poolData.stats["1"])) * 100
     const secondPct = (poolData.stats["1"] / (poolData.stats["0"] + poolData.stats["1"])) * 100
@@ -169,11 +161,6 @@ io.on('connection', (socket) => {
         graphData.push({ [key]: [value] });
       }
     }
-    graphData.sort((a, b) => {
-      const timestampA = new Date(Object.keys(a)[0].split("-")[0]).getTime();
-      const timestampB = new Date(Object.keys(b)[0].split("-")[0]).getTime();
-      return timestampA - timestampB;
-    });
     console.log({ labels, data, totalVolume, graphData })
     io.emit('newBet', { labels, data, totalVolume, poolId, graphData });
 
