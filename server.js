@@ -5,6 +5,8 @@ import cors from 'cors';
 import * as dotenv from 'dotenv'
 import express from 'express';
 import { MongoClient, ObjectId } from 'mongodb'
+import https from 'https';
+import * as fs from "fs";
 
 dotenv.config()
 
@@ -27,7 +29,6 @@ app.get('/api/bets/get-bets/:id', async (req, res) => {
   res.status(200).json(poolData)
 });
 
-
 app.get('/api/pools/get-top-pools', async (req, res) => {
   if (!db) {
     console.error("Data base is not connected")
@@ -41,7 +42,7 @@ app.get('/api/pools/get-top-pools', async (req, res) => {
   res.status(200).json(poolRes)
 });
 
-app.get('/api/pools/get-pool/:id', async (req, res) => {
+app.get('/api/pools/get-pool/:id/:playerAddress', async (req, res) => {
   const _id = req.params.id
   let coll = await db.collection("pools")
   const poolData = await coll.findOne({ "_id": new ObjectId(_id) })
@@ -85,8 +86,84 @@ app.post('/api/bets/place-bet', async (req, res) => {
     amount: stakeAmount
   });
   res.status(201).json(poolData)
-  console.log('done')
 });
+
+app.get('/api/bet/get-bet-image/:id', async(req, res) => {
+  const text = req.params.id; // Text input
+  const access_key = 'GOJsuiXyp5pabu2DI_3GDE5KlkgjFh0HKGwrlQ89xYU'; // Replace with your Unsplash access key
+
+  https.get(`https://api.unsplash.com/photos/random?query=${text}&client_id=${access_key}`, (res) => {
+    let data = '';
+    res.on('data', (chunk) => {
+      data += chunk;
+    });
+    res.on('end', () => {
+      const image_url = JSON.parse(data).urls.regular;
+      https.get(image_url, (res) => {
+        const file = fs.createWriteStream('image.png');
+        res.pipe(file);
+        file.on('finish', () => {
+          file.close();
+          console.log('Image saved to file');
+        });
+      });
+    });
+  });
+  res.status(200)
+});
+
+app.get('/api/notification/getNotifications/:playerAddress', async (req, res) => {
+  let coll = await db.collection("notifications")
+  const notificationData = await coll.find({'playerAddress': req.params.playerAddress}).toArray()
+  res.status(200).json(notificationData)
+});
+
+app.post('/api/notification/addNotification', async (req, res) => {
+  const body = req.body
+  let coll = await db.collection("notifications")
+  const { poolId, playerAddress, notificationDetails, notificationTitle, status } = body
+  const notificationData = await coll.insertOne({ poolId, playerAddress, notificationDetails, notificationTitle, status })
+  res.status(201).json(notificationData)
+});
+
+app.put('/api/notification/updateNotification/:notification', async (req, res) => {
+  const body = req.body
+  let coll = await db.collection("notifications")
+  const { _id, poolId, playerAddress, notification_text, notification_title, status } = body
+  const poolData = await coll.updateOne(
+    { _id: new ObjectId(_id) },
+    {
+      $set: {
+        notification_text: notification_text,
+        notification_title: notification_title,
+        playerAddress: playerAddress,
+        status: status,
+        poolId: new ObjectId(poolId)
+      },
+    }
+  );
+  res.status(201).json(poolData)
+});
+
+app.post('/api/notification/addNotification/:notification', async (req, res) => {
+  const body = req.body
+  let coll = await db.collection("notifications")
+  const { _id, poolId, playerAddress, notification_text, notification_title, status } = body
+  const poolData = await coll.insertOne(
+    { _id: new ObjectId(_id) },
+    {
+      $set: {
+        notification_text: notification_text,
+        notification_title: notification_title,
+        playerAddress: playerAddress,
+        status: status,
+        poolId: new ObjectId(poolId)
+      },
+    }
+  );
+  res.status(201).json(poolData)
+});
+
 
 server.listen(PORT, async (req, res) => {
   const client = new MongoClient(CONNECTION_URL);
