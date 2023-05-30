@@ -42,7 +42,7 @@ app.get('/api/pools/get-top-pools', async (req, res) => {
   res.status(200).json(poolRes)
 });
 
-app.get('/api/pools/get-pool/:playerAddress', async (req, res) => {
+app.get('/api/pools/get-pool/:id', async (req, res) => {
   const _id = req.params.id
   let coll = await db.collection("pools")
   const poolData = await coll.findOne({ "_id": new ObjectId(_id) })
