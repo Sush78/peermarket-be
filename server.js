@@ -114,7 +114,7 @@ app.get('/api/bet/get-bet-image/:id', async(req, res) => {
 
 app.get('/api/notification/getNotifications/:playerAddress', async (req, res) => {
   let coll = await db.collection("notifications")
-  const notificationData = await coll.find({'playerAddress': req.params.playerAddress}).toArray()
+  const notificationData = await coll.find({'player_address': req.params.playerAddress}).toArray()
   res.status(200).json(notificationData)
 });
 
@@ -131,13 +131,17 @@ app.put('/api/notification/updateNotification/:notification', async (req, res) =
   let coll = await db.collection("notifications")
   const { _id, pool_id, player_address, notification_text, notification_title, status } = body
   const poolData = await coll.updateOne(
+    { _id: new ObjectId(_id) },
+    {
+      $set: 
     {
         notification_text: notification_text,
         notification_title: notification_title,
-        playerAddress: player_address,
+        player_address: player_address,
         status: status,
-        poolId: new ObjectId(pool_id)
+        pool_id: new ObjectId(pool_id)
       }
+    }
   );
   res.status(201).json(poolData)
 });
