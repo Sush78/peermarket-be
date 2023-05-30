@@ -42,7 +42,7 @@ app.get('/api/pools/get-top-pools', async (req, res) => {
   res.status(200).json(poolRes)
 });
 
-app.get('/api/pools/get-pool/:id/:playerAddress', async (req, res) => {
+app.get('/api/pools/get-pool/:playerAddress', async (req, res) => {
   const _id = req.params.id
   let coll = await db.collection("pools")
   const poolData = await coll.findOne({ "_id": new ObjectId(_id) })
@@ -148,19 +148,8 @@ app.put('/api/notification/updateNotification/:notification', async (req, res) =
 app.post('/api/notification/addNotification/:notification', async (req, res) => {
   const body = req.body
   let coll = await db.collection("notifications")
-  const { _id, poolId, playerAddress, notification_text, notification_title, status } = body
-  const poolData = await coll.insertOne(
-    { _id: new ObjectId(_id) },
-    {
-      $set: {
-        notification_text: notification_text,
-        notification_title: notification_title,
-        playerAddress: playerAddress,
-        status: status,
-        poolId: new ObjectId(poolId)
-      },
-    }
-  );
+  const { _id, pool_id, player_address, notification_text, notification_title, status } = body
+  const poolData = await coll.insertOne({pool_id,status,notification_title,player_address,notification_text});
   res.status(201).json(poolData)
 });
 
