@@ -129,18 +129,15 @@ app.post('/api/notification/addNotification', async (req, res) => {
 app.put('/api/notification/updateNotification/:notification', async (req, res) => {
   const body = req.body
   let coll = await db.collection("notifications")
-  const { _id, poolId, playerAddress, notification_text, notification_title, status } = body
+  const { _id, pool_id, player_address, notification_text, notification_title, status } = body
   const poolData = await coll.updateOne(
-    { _id: new ObjectId(_id) },
     {
-      $set: {
         notification_text: notification_text,
         notification_title: notification_title,
-        playerAddress: playerAddress,
+        playerAddress: player_address,
         status: status,
-        poolId: new ObjectId(poolId)
-      },
-    }
+        poolId: new ObjectId(pool_id)
+      }
   );
   res.status(201).json(poolData)
 });
